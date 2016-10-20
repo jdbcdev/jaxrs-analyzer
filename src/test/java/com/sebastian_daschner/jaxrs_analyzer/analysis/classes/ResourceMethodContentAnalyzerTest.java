@@ -17,12 +17,16 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.classes;
 
 
-import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
-import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.BytecodeAnalyzer;
-import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
-import com.sebastian_daschner.jaxrs_analyzer.model.elements.HttpResponse;
-import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
-import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
+import static com.sebastian_daschner.jaxrs_analyzer.analysis.utils.TestClassUtils.getClasses;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Set;
+
+import javax.ws.rs.NotFoundException;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,14 +35,13 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
-import javax.ws.rs.NotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Set;
-
-import static com.sebastian_daschner.jaxrs_analyzer.analysis.utils.TestClassUtils.getClasses;
-import static org.junit.Assert.assertEquals;
+import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.BytecodeAnalyzer;
+import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
+import com.sebastian_daschner.jaxrs_analyzer.model.elements.HttpResponse;
+import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
+import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
 
 @RunWith(Parameterized.class)
 public class ResourceMethodContentAnalyzerTest {
@@ -85,7 +88,7 @@ public class ResourceMethodContentAnalyzerTest {
     @Test
     public void test() throws IOException {
         try {
-            final ClassReader classReader = new ClassReader(testClassName);
+            final ClassReader classReader = ThreadLocalClassLoader.getClassReader(testClassName);
             final ClassResult classResult = new ClassResult();
 
             // only hook up to desired method

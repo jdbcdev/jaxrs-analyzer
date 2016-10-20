@@ -1,6 +1,39 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.classes;
 
+import static com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils.isAnnotationPresent;
+import static org.objectweb.asm.Opcodes.ACC_NATIVE;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import static org.objectweb.asm.Opcodes.ASM5;
+
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Stream;
+
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
+
 import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.annotation.ApplicationPathAnnotationVisitor;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.annotation.ConsumesAnnotationVisitor;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.annotation.PathAnnotationVisitor;
@@ -9,18 +42,6 @@ import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
 import com.sebastian_daschner.jaxrs_analyzer.model.Types;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
-import org.objectweb.asm.*;
-
-import javax.ws.rs.*;
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Stream;
-
-import static com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils.isAnnotationPresent;
-import static org.objectweb.asm.Opcodes.*;
 
 /**
  * @author Sebastian Daschner
@@ -147,7 +168,7 @@ public class JAXRSClassVisitor extends ClassVisitor {
     private void visitJAXRSSuperMethod(Method method, MethodResult methodResult) {
         try {
 
-            final ClassReader classReader = new ClassReader(method.getDeclaringClass().getCanonicalName());
+            final ClassReader classReader = ThreadLocalClassLoader.getClassReader(method.getDeclaringClass().getCanonicalName());
             final ClassVisitor visitor = new JAXRSAnnotatedSuperMethodClassVisitor(methodResult, method);
 
             classReader.accept(visitor, ClassReader.EXPAND_FRAMES);

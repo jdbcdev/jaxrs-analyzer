@@ -17,6 +17,8 @@
 package com.sebastian_daschner.jaxrs_analyzer.model;
 
 import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer;
+
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.util.TraceSignatureVisitor;
@@ -26,6 +28,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.TypeVariable;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -366,9 +369,10 @@ public final class JavaUtils {
 
         // TODO test for variable types
 
-        ClassLoader classLoader = JavaUtils.class.getClassLoader();
+        // ClassLoader classLoader = JavaUtils.class.getClassLoader();
+        URLClassLoader urlClassLoader = ProjectAnalyzer.ThreadLocalClassLoader.get(); 
         try {
-            return classLoader.loadClass(className.replace('/', '.'));
+            return urlClassLoader.loadClass(className.replace('/', '.'));
         } catch (ClassNotFoundException e) {
             LogProvider.error("Could not load class " + className);
             LogProvider.debug(e);

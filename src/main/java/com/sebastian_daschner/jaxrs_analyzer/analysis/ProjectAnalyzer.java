@@ -29,6 +29,7 @@ import org.objectweb.asm.ClassVisitor;
 import javax.ws.rs.ApplicationPath;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -62,7 +63,7 @@ public class ProjectAnalyzer {
     private final Set<String> classes = new HashSet<>();
     private final ResultInterpreter resultInterpreter = new ResultInterpreter();
     private final BytecodeAnalyzer bytecodeAnalyzer = new BytecodeAnalyzer();
-    private final URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+    private final ThreadLocalClassLoader urlClassLoader = new ThreadLocalClassLoader();
 
     /**
      * Creates a project analyzer with given class path locations where to search for classes.
@@ -108,7 +109,7 @@ public class ProjectAnalyzer {
 
     private boolean isJAXRSRootResource(String className) {
         try {
-            final Class<?> clazz = urlClassLoader.loadClass(className);
+            final Class<?> clazz = urlClassLoader.get().loadClass(className);
             return isAnnotationPresent(clazz, javax.ws.rs.Path.class) || isAnnotationPresent(clazz, ApplicationPath.class);
         } catch (ClassNotFoundException e) {
             LogProvider.error("The class " + className + " could not be loaded!");
@@ -119,7 +120,9 @@ public class ProjectAnalyzer {
 
     private void analyzeClass(final String className, ClassResult classResult) {
         try {
-            final ClassReader classReader = new ClassReader(className);
+            String pathname = className.replace('.', '/') + ".class";
+            InputStream resourceAsStream = urlClassLoader.get().getResourceAsStream(pathname);
+            final ClassReader classReader = new ClassReader(resourceAsStream);
             final ClassVisitor visitor = new JAXRSClassVisitor(classResult);
 
             classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
@@ -140,7 +143,7 @@ public class ProjectAnalyzer {
         try {
             final Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
             method.setAccessible(true);
-            method.invoke(urlClassLoader, location.toUri().toURL());
+            method.invoke(urlClassLoader.get(), location.toUri().toURL());
         } catch (Exception e) {
             throw new IllegalArgumentException("The location '" + location + "' could not be loaded to the class path!", e);
         }
@@ -209,4 +212,28 @@ public class ProjectAnalyzer {
         return replacedSeparators.substring(0, replacedSeparators.length() - ".class".length());
     }
 
+    
+    static public class ThreadLocalClassLoader {
+        // Atomic integer containing the next thread ID to be assigned
+        private static final URLClassLoader urlClassLoader = new URLClassLoader(((URLClassLoader)ClassLoader.getSystemClassLoader()).getURLs());
+
+        // Thread local variable containing each thread's ID
+        private static final ThreadLocal<URLClassLoader> threadLocalClassLoader =
+            new ThreadLocal<URLClassLoader>() {
+                @Override protected URLClassLoader initialValue() {
+                    return urlClassLoader;
+            }
+        };
+
+        // Returns the current thread's unique ID, assigning it if necessary
+        public static URLClassLoader get() {
+            return threadLocalClassLoader.get();
+        }
+
+        public static ClassReader getClassReader(String className) throws IOException {
+            String pathname = className.replace('.', '/') + ".class";
+            InputStream resourceAsStream = threadLocalClassLoader.get().getResourceAsStream(pathname);
+            return new ClassReader(resourceAsStream);
+        }
+    }    
 }

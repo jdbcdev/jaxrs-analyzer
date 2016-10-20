@@ -16,7 +16,18 @@
 
 package com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+
 import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.reduction.RelevantInstructionReducer;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.ProjectMethodClassVisitor;
 import com.sebastian_daschner.jaxrs_analyzer.model.instructions.Instruction;
@@ -24,15 +35,6 @@ import com.sebastian_daschner.jaxrs_analyzer.model.instructions.InvokeInstructio
 import com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier;
 import com.sebastian_daschner.jaxrs_analyzer.model.methods.ProjectMethod;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Analyzes the content of a method. Sub classes have to be thread-safe.
@@ -114,7 +116,7 @@ abstract class MethodContentAnalyzer {
 
     private MethodResult visitProjectMethod(MethodIdentifier identifier) {
         try {
-            final ClassReader classReader = new ClassReader(identifier.getContainingClass());
+            final ClassReader classReader = ThreadLocalClassLoader.getClassReader(identifier.getContainingClass());
             final MethodResult methodResult = new MethodResult();
             methodResult.setOriginalMethodSignature(identifier.getSignature());
             final ClassVisitor visitor = new ProjectMethodClassVisitor(methodResult, identifier);

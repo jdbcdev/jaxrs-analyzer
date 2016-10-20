@@ -1,21 +1,13 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode;
 
-import com.sebastian_daschner.jaxrs_analyzer.analysis.JobRegistry;
-import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.ProjectMethodClassVisitor;
-import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
-import com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier;
-import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
-import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
-import net.jcip.annotations.NotThreadSafe;
-import org.junit.AfterClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.mockito.ArgumentCaptor;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Type;
+import static com.sebastian_daschner.jaxrs_analyzer.analysis.utils.TestClassUtils.getClasses;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -24,10 +16,23 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.sebastian_daschner.jaxrs_analyzer.analysis.utils.TestClassUtils.getClasses;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import javax.ws.rs.NotFoundException;
+
+import org.junit.AfterClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.mockito.ArgumentCaptor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Type;
+
+import com.sebastian_daschner.jaxrs_analyzer.analysis.JobRegistry;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.ProjectMethodClassVisitor;
+import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
+import com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier;
+import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
+import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
 
 @RunWith(Parameterized.class)
 public class SubResourceLocatorMethodContentAnalyzerTest {
@@ -77,7 +82,7 @@ public class SubResourceLocatorMethodContentAnalyzerTest {
     @Test
     public void test() throws IOException {
         try {
-            final ClassReader classReader = new ClassReader(testClassName);
+            final ClassReader classReader = ThreadLocalClassLoader.getClassReader(testClassName);
 
             final MethodResult methodResult = new MethodResult();
             final ClassResult parentResource = new ClassResult();

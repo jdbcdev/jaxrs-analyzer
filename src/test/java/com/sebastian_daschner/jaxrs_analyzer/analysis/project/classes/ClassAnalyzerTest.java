@@ -17,24 +17,27 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.project.classes;
 
 
-import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.BytecodeAnalyzer;
-import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.JAXRSClassVisitor;
-import com.sebastian_daschner.jaxrs_analyzer.analysis.utils.TestClassUtils;
-import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
-import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Set;
+
+import javax.ws.rs.NotFoundException;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 
-import javax.ws.rs.NotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.BytecodeAnalyzer;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.JAXRSClassVisitor;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.utils.TestClassUtils;
+import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
+import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
 
 @RunWith(Parameterized.class)
 public class ClassAnalyzerTest {
@@ -75,7 +78,7 @@ public class ClassAnalyzerTest {
 
     @Test
     public void test() throws IOException {
-        final ClassReader classReader = new ClassReader(testClass);
+        final ClassReader classReader = ThreadLocalClassLoader.getClassReader(testClass);
         final ClassResult actualResult = new ClassResult();
         final ClassVisitor visitor = new JAXRSClassVisitor(actualResult);
         classReader.accept(visitor, ClassReader.EXPAND_FRAMES);

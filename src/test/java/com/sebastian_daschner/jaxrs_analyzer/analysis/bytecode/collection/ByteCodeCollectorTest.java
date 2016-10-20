@@ -16,25 +16,32 @@
 
 package com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.collection;
 
-import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.ProjectMethodClassVisitor;
-import com.sebastian_daschner.jaxrs_analyzer.analysis.utils.TestClassUtils;
-import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
-import com.sebastian_daschner.jaxrs_analyzer.model.instructions.Instruction;
-import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
+import static com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier.of;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import javax.ws.rs.NotFoundException;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 
-import javax.ws.rs.NotFoundException;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.stream.Stream;
-
-import static com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier.of;
-import static org.junit.Assert.assertEquals;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.ProjectMethodClassVisitor;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.utils.TestClassUtils;
+import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
+import com.sebastian_daschner.jaxrs_analyzer.model.instructions.Instruction;
+import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
 
 @RunWith(Parameterized.class)
 public class ByteCodeCollectorTest {
@@ -75,7 +82,7 @@ public class ByteCodeCollectorTest {
         // round trip to find the correct test method
         final Method method = Stream.of(JavaUtils.loadClassFromName(testClass).getDeclaredMethods()).filter(m -> m.getName().equals("method")).findAny().orElseThrow(NoSuchElementException::new);
 
-        final ClassReader classReader = new ClassReader(testClass);
+        final ClassReader classReader = ThreadLocalClassLoader.getClassReader(testClass);
         final MethodResult methodResult = new MethodResult();
         final ProjectMethodClassVisitor visitor = new ProjectMethodClassVisitor(methodResult, of(testClass, "method", Type.getMethodDescriptor(method), false));
         classReader.accept(visitor, ClassReader.EXPAND_FRAMES);

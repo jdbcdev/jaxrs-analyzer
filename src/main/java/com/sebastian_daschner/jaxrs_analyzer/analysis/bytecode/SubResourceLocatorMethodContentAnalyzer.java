@@ -16,6 +16,11 @@
 
 package com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode;
 
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import com.sebastian_daschner.jaxrs_analyzer.analysis.JobRegistry;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.simulation.MethodPool;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.simulation.MethodSimulator;
@@ -24,11 +29,6 @@ import com.sebastian_daschner.jaxrs_analyzer.model.instructions.Instruction;
 import com.sebastian_daschner.jaxrs_analyzer.model.methods.ProjectMethod;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
-
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Analyzes sub-resource-locator methods. This class is thread-safe.
