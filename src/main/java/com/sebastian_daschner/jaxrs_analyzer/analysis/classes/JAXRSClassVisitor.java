@@ -1,6 +1,7 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.classes;
 
 import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.annotation.ApplicationPathAnnotationVisitor;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.annotation.ConsumesAnnotationVisitor;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.annotation.PathAnnotationVisitor;
@@ -147,7 +148,7 @@ public class JAXRSClassVisitor extends ClassVisitor {
     private void visitJAXRSSuperMethod(Method method, MethodResult methodResult) {
         try {
 
-            final ClassReader classReader = new ClassReader(method.getDeclaringClass().getCanonicalName());
+            final ClassReader classReader = ThreadLocalClassLoader.getClassReader(method.getDeclaringClass().getCanonicalName());
             final ClassVisitor visitor = new JAXRSAnnotatedSuperMethodClassVisitor(methodResult, method);
 
             classReader.accept(visitor, ClassReader.EXPAND_FRAMES);

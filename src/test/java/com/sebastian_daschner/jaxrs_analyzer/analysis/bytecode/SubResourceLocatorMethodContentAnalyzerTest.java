@@ -1,5 +1,6 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode;
 
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.JobRegistry;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.ProjectMethodClassVisitor;
 import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
@@ -77,7 +78,7 @@ public class SubResourceLocatorMethodContentAnalyzerTest {
     @Test
     public void test() throws IOException {
         try {
-            final ClassReader classReader = new ClassReader(testClassName);
+            final ClassReader classReader = ThreadLocalClassLoader.getClassReader(testClassName);
 
             final MethodResult methodResult = new MethodResult();
             final ClassResult parentResource = new ClassResult();

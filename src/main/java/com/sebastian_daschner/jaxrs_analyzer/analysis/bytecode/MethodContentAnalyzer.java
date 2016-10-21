@@ -17,6 +17,7 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode;
 
 import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.reduction.RelevantInstructionReducer;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.classes.ProjectMethodClassVisitor;
 import com.sebastian_daschner.jaxrs_analyzer.model.instructions.Instruction;
@@ -114,7 +115,7 @@ abstract class MethodContentAnalyzer {
 
     private MethodResult visitProjectMethod(MethodIdentifier identifier) {
         try {
-            final ClassReader classReader = new ClassReader(identifier.getContainingClass());
+            final ClassReader classReader = ThreadLocalClassLoader.getClassReader(identifier.getContainingClass());
             final MethodResult methodResult = new MethodResult();
             methodResult.setOriginalMethodSignature(identifier.getSignature());
             final ClassVisitor visitor = new ProjectMethodClassVisitor(methodResult, identifier);

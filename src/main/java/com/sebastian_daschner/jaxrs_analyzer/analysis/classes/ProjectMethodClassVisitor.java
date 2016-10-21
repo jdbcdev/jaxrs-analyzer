@@ -1,6 +1,7 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.classes;
 
 import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
 import com.sebastian_daschner.jaxrs_analyzer.model.Types;
 import com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
@@ -57,7 +58,7 @@ public class ProjectMethodClassVisitor extends ClassVisitor {
         // if method hasn't been found it may be on a super class (invoke_virtual)
         if (!methodFound && !superName.equals(Types.CLASS_OBJECT)) {
             try {
-                final ClassReader classReader = new ClassReader(superName);
+                final ClassReader classReader = ThreadLocalClassLoader.getClassReader(superName);
                 final ClassVisitor visitor = new ProjectMethodClassVisitor(methodResult, identifier);
 
                 classReader.accept(visitor, ClassReader.EXPAND_FRAMES);

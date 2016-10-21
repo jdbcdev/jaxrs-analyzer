@@ -18,6 +18,7 @@ package com.sebastian_daschner.jaxrs_analyzer.analysis.classes;
 
 
 import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.bytecode.BytecodeAnalyzer;
 import com.sebastian_daschner.jaxrs_analyzer.model.JavaUtils;
 import com.sebastian_daschner.jaxrs_analyzer.model.elements.HttpResponse;
@@ -85,7 +86,7 @@ public class ResourceMethodContentAnalyzerTest {
     @Test
     public void test() throws IOException {
         try {
-            final ClassReader classReader = new ClassReader(testClassName);
+            final ClassReader classReader = ThreadLocalClassLoader.getClassReader(testClassName);
             final ClassResult classResult = new ClassResult();
 
             // only hook up to desired method
