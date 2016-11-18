@@ -16,20 +16,40 @@
 
 package com.sebastian_daschner.jaxrs_analyzer.model;
 
-import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.signature.SignatureReader;
-import org.objectweb.asm.util.TraceSignatureVisitor;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_OBJECT;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_BOOLEAN;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_BYTE;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_CHAR;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_DOUBLE;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_FLOAT;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_INT;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_LONG;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_SHORT;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.CLASS_PRIMITIVE_VOID;
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.OBJECT;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.TypeVariable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.sebastian_daschner.jaxrs_analyzer.model.Types.*;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.signature.SignatureReader;
+import org.objectweb.asm.util.TraceSignatureVisitor;
+
+import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
+import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
 
 /**
  * Contains Java and Javassist utility functionality.
@@ -365,8 +385,9 @@ public final class JavaUtils {
         }
 
         // TODO test for variable types
-
-        ClassLoader classLoader = JavaUtils.class.getClassLoader();
+        
+        // ClassLoader classLoader = JavaUtils.class.getClassLoader();
+        ClassLoader classLoader = ThreadLocalClassLoader.get();
         try {
             return classLoader.loadClass(className.replace('/', '.'));
         } catch (ClassNotFoundException e) {
