@@ -22,6 +22,7 @@ import com.sebastian_daschner.jaxrs_analyzer.model.instructions.LoadInstruction;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -143,7 +144,7 @@ public class RelevantInstructionReducer {
     private SortedSet<Integer> findLoadStoreBacktrackPositions(final Set<Integer> unhandledLoadIndexes) {
         return unhandledLoadIndexes.stream()
                 .map(index -> stackSizeSimulator.findLoadStoreBacktrackPositions(InstructionFinder.findLoadStores(index, instructions)))
-                .collect(() -> new TreeSet<>(Comparator.reverseOrder()), Set::addAll, Set::addAll);
+                .collect(() -> new TreeSet<Integer>(Comparator.reverseOrder()), Set::addAll, Set::addAll);
     }
 
 }
