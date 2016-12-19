@@ -24,9 +24,15 @@ import com.sebastian_daschner.jaxrs_analyzer.model.rest.Resources;
 import com.sebastian_daschner.jaxrs_analyzer.model.rest.Response;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
+import com.sebastian_daschner.jaxrs_analyzer.utils.StringUtils;
+import com.sun.javadoc.Doc;
+import com.sun.javadoc.MethodDoc;
+import com.sun.javadoc.ParamTag;
 
 import java.util.Optional;
 import java.util.Set;
+
+import static com.sebastian_daschner.jaxrs_analyzer.analysis.results.JavaDocParameterResolver.*;
 
 /**
  * Interprets the analyzed project results to REST results.
@@ -95,14 +101,19 @@ public class ResultInterpreter {
      * @return The resource method which this method represents
      */
     private ResourceMethod interpretResourceMethod(final MethodResult methodResult, final ClassResult classResult) {
-        // HTTP method and method parameters
-        final ResourceMethod resourceMethod = new ResourceMethod(methodResult.getHttpMethod());
+        final MethodDoc methodDoc = methodResult.getMethodDoc();
+
+        final String description = methodDoc == null || StringUtils.isBlank(methodDoc.commentText()) ? null : methodDoc.commentText();
+        final ResourceMethod resourceMethod = new ResourceMethod(methodResult.getHttpMethod(), description);
         updateMethodParameters(resourceMethod.getMethodParameters(), classResult.getClassFields());
         updateMethodParameters(resourceMethod.getMethodParameters(), methodResult.getMethodParameters());
+
+        addParameterDescriptions(resourceMethod.getMethodParameters(), methodDoc);
         stringParameterResolver.replaceParametersTypes(resourceMethod.getMethodParameters());
 
         if (methodResult.getRequestBodyType() != null) {
             resourceMethod.setRequestBody(javaTypeAnalyzer.analyze(methodResult.getRequestBodyType()));
+            resourceMethod.setRequestBodyDescription(findRequestBodyDescription(methodDoc));
         }
 
         // add default status code due to JSR 339
@@ -113,6 +124,27 @@ public class ResultInterpreter {
         addMediaTypes(methodResult, classResult, resourceMethod);
 
         return resourceMethod;
+    }
+
+    private void addParameterDescriptions(final Set<MethodParameter> methodParameters, final MethodDoc methodDoc) {
+        if (methodDoc == null)
+            return;
+
+        methodParameters.forEach(p -> {
+            final Optional<ParamTag> tag = findParameterDoc(p, methodDoc);
+
+            final String description = tag.map(ParamTag::parameterComment)
+                    .orElseGet(() -> findFieldDoc(p, methodDoc.containingClass())
+                            .map(Doc::commentText).orElse(null));
+
+            p.setDescription(description);
+        });
+    }
+
+    private String findRequestBodyDescription(final MethodDoc methodDoc) {
+        if (methodDoc == null)
+            return null;
+        return findRequestBodyDoc(methodDoc).map(ParamTag::parameterComment).orElse(null);
     }
 
     /**

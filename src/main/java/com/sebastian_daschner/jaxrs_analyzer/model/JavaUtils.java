@@ -34,22 +34,19 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.util.TraceSignatureVisitor;
 
+import static com.sebastian_daschner.jaxrs_analyzer.model.Types.*;
 import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
 import com.sebastian_daschner.jaxrs_analyzer.analysis.ProjectAnalyzer.ThreadLocalClassLoader;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
 /**
  * Contains Java and Javassist utility functionality.
@@ -312,7 +309,7 @@ public final class JavaUtils {
      */
     public static List<String> getTypeParameters(final String type) {
         if (type.charAt(0) != 'L')
-            return Collections.emptyList();
+            return emptyList();
 
         int lastStart = type.indexOf('<') + 1;
         final List<String> parameters = new ArrayList<>();
@@ -347,12 +344,14 @@ public final class JavaUtils {
     }
 
     private static Map<String, String> getTypeVariables(final String type) {
+        if (type == null)
+            return emptyMap();
         final Map<String, String> variables = new HashMap<>();
         final List<String> actualTypeParameters = getTypeParameters(type);
         final Class<?> loadedClass = loadClassFromType(type);
         if (loadedClass == null) {
             LogProvider.debug("could not load class for type " + type);
-            return Collections.emptyMap();
+            return emptyMap();
         }
 
         final TypeVariable<? extends Class<?>>[] typeParameters = loadedClass.getTypeParameters();
@@ -416,6 +415,11 @@ public final class JavaUtils {
                 // return types are not taken into account (could be overloaded method w/ different return type)
                 && Objects.equals(getParameters(getMethodSignature(m)), parameters)
         ).findAny().orElse(null);
+    }
+
+    public static String getMethodSignature(final String returnType, final String... parameterTypes) {
+        final String parameters = Stream.of(parameterTypes).collect(Collectors.joining());
+        return '(' + parameters + ')' + returnType;
     }
 
     public static String getMethodSignature(final Method method) {
@@ -482,7 +486,7 @@ public final class JavaUtils {
 //        final String[] types = resolveMethodSignature(methodDesc);
 //        return IntStream.range(0, types.length).mapToObj(i -> types[i]).collect(Collectors.toList());
         if (methodDesc == null)
-            return Collections.emptyList();
+            return emptyList();
 
         final char[] buffer = methodDesc.toCharArray();
         final List<String> args = new ArrayList<>();

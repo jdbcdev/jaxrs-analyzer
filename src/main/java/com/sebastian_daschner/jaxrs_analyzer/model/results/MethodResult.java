@@ -18,8 +18,10 @@ package com.sebastian_daschner.jaxrs_analyzer.model.results;
 
 import com.sebastian_daschner.jaxrs_analyzer.model.elements.HttpResponse;
 import com.sebastian_daschner.jaxrs_analyzer.model.instructions.Instruction;
+import com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier;
 import com.sebastian_daschner.jaxrs_analyzer.model.rest.HttpMethod;
 import com.sebastian_daschner.jaxrs_analyzer.model.rest.MethodParameter;
+import com.sun.javadoc.MethodDoc;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,10 +42,11 @@ public class MethodResult {
     private final List<Instruction> instructions = new ArrayList<>();
     private String path;
     private String requestBodyType;
-    private String originalMethodSignature;
+    private MethodIdentifier originalMethodSignature;
     private HttpMethod httpMethod;
     private ClassResult subResource;
     private ClassResult parentResource;
+    private MethodDoc methodDoc;
 
     public Set<String> getRequestMediaTypes() {
         return requestMediaTypes;
@@ -81,11 +84,11 @@ public class MethodResult {
         this.requestBodyType = requestBodyType;
     }
 
-    public String getOriginalMethodSignature() {
+    public MethodIdentifier getOriginalMethodSignature() {
         return originalMethodSignature;
     }
 
-    public void setOriginalMethodSignature(String originalMethodSignature) {
+    public void setOriginalMethodSignature(MethodIdentifier originalMethodSignature) {
         this.originalMethodSignature = originalMethodSignature;
     }
 
@@ -114,6 +117,14 @@ public class MethodResult {
         this.parentResource = parentResource;
     }
 
+    public MethodDoc getMethodDoc() {
+        return methodDoc;
+    }
+
+    public void setMethodDoc(final MethodDoc methodDoc) {
+        this.methodDoc = methodDoc;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -132,6 +143,7 @@ public class MethodResult {
             return false;
         if (httpMethod != that.httpMethod) return false;
         if (subResource != null ? !subResource.equals(that.subResource) : that.subResource != null) return false;
+        if (methodDoc != null ? !methodDoc.equals(that.methodDoc) : that.methodDoc != null) return false;
         return true;
     }
 
@@ -146,6 +158,7 @@ public class MethodResult {
         result = 31 * result + (requestBodyType != null ? requestBodyType.hashCode() : 0);
         result = 31 * result + (httpMethod != null ? httpMethod.hashCode() : 0);
         result = 31 * result + (subResource != null ? subResource.hashCode() : 0);
+        result = 31 * result + (methodDoc != null ? methodDoc.hashCode() : 0);
         return result;
     }
 
@@ -161,6 +174,7 @@ public class MethodResult {
                 ", requestBodyType='" + requestBodyType + '\'' +
                 ", httpMethod=" + httpMethod +
                 ", subResource=" + subResource +
+                ", methodDoc=" + methodDoc +
                 ", parentResource=" + (parentResource == null ? "null" : "notNull") +
                 '}';
     }

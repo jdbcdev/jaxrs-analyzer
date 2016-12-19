@@ -5,14 +5,15 @@ import com.sebastian_daschner.jaxrs_analyzer.backend.Backend;
 import com.sebastian_daschner.jaxrs_analyzer.model.rest.Project;
 import com.sebastian_daschner.jaxrs_analyzer.model.rest.Resources;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.Writer;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 
 /**
  * Generates REST documentation of JAX-RS projects automatically by bytecode analysis.
@@ -21,7 +22,8 @@ import java.util.Set;
  */
 public class JAXRSAnalyzer {
 
-    private final Set<Path> projectPaths = new HashSet<>();
+    private final Set<Path> projectClassPaths = new HashSet<>();
+    private final Set<Path> projectSourcePaths = new HashSet<>();
     private final Set<Path> classPaths = new HashSet<>();
     private final String projectName;
     private final String projectVersion;
@@ -31,25 +33,28 @@ public class JAXRSAnalyzer {
     /**
      * Constructs a JAX-RS Analyzer.
      *
-     * @param projectPaths   The paths of the projects to be analyzed (can either be directories or jar-files, at least one is mandatory)
-     * @param classPaths     The additional class paths (can either be directories or jar-files)
-     * @param projectName    The project name
-     * @param projectVersion The project version
-     * @param backend        The backend to render the output
-     * @param outputLocation The location of the output file (output will be printed to standard out if {@code null})
+     * @param projectClassPaths  The paths of the projects classes to be analyzed (can either be directories or jar-files, at least one is mandatory)
+     * @param projectSourcePaths The paths of the projects sources to be analyzed (can either be directories or jar-files, optional)
+     * @param classPaths         The additional class paths (can either be directories or jar-files)
+     * @param projectName        The project name
+     * @param projectVersion     The project version
+     * @param backend            The backend to render the output
+     * @param outputLocation     The location of the output file (output will be printed to standard out if {@code null})
      */
-    public JAXRSAnalyzer(final Set<Path> projectPaths, final Set<Path> classPaths, final String projectName, final String projectVersion,
+    public JAXRSAnalyzer(final Set<Path> projectClassPaths, final Set<Path> projectSourcePaths, final Set<Path> classPaths, final String projectName, final String projectVersion,
                          final Backend backend, final Path outputLocation) {
-        Objects.requireNonNull(projectPaths);
+        Objects.requireNonNull(projectClassPaths);
+        Objects.requireNonNull(projectSourcePaths);
         Objects.requireNonNull(classPaths);
         Objects.requireNonNull(projectName);
         Objects.requireNonNull(projectVersion);
         Objects.requireNonNull(backend);
 
-        if (projectPaths.isEmpty())
+        if (projectClassPaths.isEmpty())
             throw new IllegalArgumentException("At least one project path is mandatory");
 
-        this.projectPaths.addAll(projectPaths);
+        this.projectClassPaths.addAll(projectClassPaths);
+        this.projectSourcePaths.addAll(projectSourcePaths);
         this.classPaths.addAll(classPaths);
         this.projectName = projectName;
         this.projectVersion = projectVersion;
@@ -61,7 +66,7 @@ public class JAXRSAnalyzer {
      * Analyzes the JAX-RS project at the class path and produces the output as configured.
      */
     public void analyze() {
-        final Resources resources = new ProjectAnalyzer(classPaths.toArray(new Path[classPaths.size()])).analyze(projectPaths.toArray(new Path[projectPaths.size()]));
+        final Resources resources = new ProjectAnalyzer(classPaths).analyze(projectClassPaths, projectSourcePaths);
 
         if (resources.isEmpty()) {
             LogProvider.info("Empty JAX-RS analysis result, omitting output");
@@ -69,23 +74,41 @@ public class JAXRSAnalyzer {
         }
 
         final Project project = new Project(projectName, projectVersion, resources);
-        final String output = backend.render(project);
+        final byte[] output = backend.render(project);
 
         if (outputLocation != null) {
             outputToFile(output, outputLocation);
         } else {
-            System.out.println(output);
+            outputToConsole(output);
         }
     }
 
-    private static void outputToFile(final String output, final Path outputLocation) {
-        try (final Writer writer = new BufferedWriter(new FileWriter(outputLocation.toFile()))) {
-            writer.write(output);
-            writer.flush();
+    private void outputToConsole(final byte[] output) {
+        try {
+            System.out.write(output);
+            System.out.flush();
+        } catch (IOException e) {
+            LogProvider.error("Could not write the output, reason: " + e.getMessage());
+            LogProvider.debug(e);
+        }
+    }
+
+    private static void outputToFile(final byte[] output, final Path outputLocation) {
+        try (final OutputStream stream = new FileOutputStream(outputLocation.toFile())) {
+            stream.write(output);
+            stream.flush();
         } catch (IOException e) {
             LogProvider.error("Could not write to the specified output location, reason: " + e.getMessage());
             LogProvider.debug(e);
         }
+    }
+
+    public static Backend constructBackend(final String backendType) {
+        final ServiceLoader<Backend> backends = ServiceLoader.load(Backend.class);
+        return StreamSupport.stream(backends.spliterator(), false)
+                .filter(b -> backendType.equalsIgnoreCase(b.getName()))
+                .findAny()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown backend type " + backendType));
     }
 
 }

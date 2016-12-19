@@ -8,10 +8,14 @@ package com.sebastian_daschner.jaxrs_analyzer.model.rest;
  */
 public class MethodParameter {
 
-    // only String, primitive types, enums or collections of these (no nested levels) are allowed
+    /**
+     * The type of the Java property (field or parameter).
+     * Only String, primitive types, enums or collections of these (no nested levels) are allowed.
+     */
     private TypeIdentifier type;
     private ParameterType parameterType;
     private String name;
+    private String description;
     private String defaultValue;
 
     public MethodParameter(final TypeIdentifier type) {
@@ -47,6 +51,14 @@ public class MethodParameter {
         this.name = name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
+    }
+
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -65,6 +77,7 @@ public class MethodParameter {
         if (type != null ? !type.equals(that.type) : that.type != null) return false;
         if (parameterType != that.parameterType) return false;
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
+        if (description != null ? !description.equals(that.description) : that.description != null) return false;
         return defaultValue != null ? defaultValue.equals(that.defaultValue) : that.defaultValue == null;
     }
 
@@ -73,6 +86,7 @@ public class MethodParameter {
         int result = type != null ? type.hashCode() : 0;
         result = 31 * result + (parameterType != null ? parameterType.hashCode() : 0);
         result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (description != null ? description.hashCode() : 0);
         result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
         return result;
     }
@@ -83,7 +97,9 @@ public class MethodParameter {
                 "type=" + type +
                 ", parameterType=" + parameterType +
                 ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
                 ", defaultValue='" + defaultValue + '\'' +
                 '}';
     }
+
 }

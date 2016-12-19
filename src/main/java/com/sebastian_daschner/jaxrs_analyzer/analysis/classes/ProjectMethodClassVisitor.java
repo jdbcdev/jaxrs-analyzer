@@ -10,7 +10,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -36,16 +35,12 @@ public class ProjectMethodClassVisitor extends ClassVisitor {
     }
 
     @Override
-    public void visitSource(String source, String debug) {
-        // TODO can be used for JavaDoc parsing
-    }
-
-    @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         // TODO allow abstract?
         final boolean legalModifiers = (access & ACC_ABSTRACT | access & ACC_NATIVE) == 0;
 
-        if (legalModifiers && identifier.getMethodName().equals(name) && (identifier.getSignature().equals(desc) || identifier.getSignature().equals(signature))) {
+        final String methodSignature = identifier.getSignature();
+        if (legalModifiers && identifier.getMethodName().equals(name) && (methodSignature.equals(desc) || methodSignature.equals(signature))) {
             methodFound = true;
             return new ProjectMethodVisitor(methodResult, identifier.getContainingClass());
         }

@@ -17,6 +17,7 @@
 package com.sebastian_daschner.jaxrs_analyzer.model.instructions;
 
 import com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier;
+import org.objectweb.asm.Label;
 
 import java.util.Objects;
 
@@ -29,8 +30,8 @@ public class InvokeDynamicInstruction extends InvokeInstruction {
 
     private final MethodIdentifier dynamicIdentifier;
 
-    public InvokeDynamicInstruction(final MethodIdentifier methodHandleIdentifier, final MethodIdentifier dynamicIdentifier) {
-        super(methodHandleIdentifier);
+    public InvokeDynamicInstruction(final MethodIdentifier methodHandleIdentifier, final MethodIdentifier dynamicIdentifier, final Label label) {
+        super(methodHandleIdentifier, label);
         Objects.requireNonNull(dynamicIdentifier);
         this.dynamicIdentifier = dynamicIdentifier;
     }
@@ -38,7 +39,7 @@ public class InvokeDynamicInstruction extends InvokeInstruction {
     @Override
     public int getStackSizeDifference() {
         // the method handle will be pushed on the stack
-        return 1 - dynamicIdentifier.getParameters();
+        return 1 - dynamicIdentifier.getParameters().size();
     }
 
     public MethodIdentifier getDynamicIdentifier() {

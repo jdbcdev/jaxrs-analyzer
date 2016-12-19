@@ -18,12 +18,13 @@ package com.sebastian_daschner.jaxrs_analyzer.backend.swagger;
 
 import com.sebastian_daschner.jaxrs_analyzer.backend.Backend;
 import com.sebastian_daschner.jaxrs_analyzer.model.rest.*;
+import com.sebastian_daschner.jaxrs_analyzer.utils.StringUtils;
 
 import javax.json.*;
 import javax.json.stream.JsonGenerator;
 import javax.ws.rs.core.Response;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,25 +42,27 @@ import static java.util.Comparator.comparing;
  *
  * @author Sebastian Daschner
  */
-class SwaggerBackend implements Backend {
+public class SwaggerBackend implements Backend {
 
     private static final String NAME = "Swagger";
     private static final String SWAGGER_VERSION = "2.0";
 
     private final Lock lock = new ReentrantLock();
-    private final SwaggerOptions options;
+    private final SwaggerOptions options = new SwaggerOptions();
+
     private Resources resources;
     private JsonObjectBuilder builder;
     private SchemaBuilder schemaBuilder;
     private String projectName;
     private String projectVersion;
 
-    SwaggerBackend(final SwaggerOptions options) {
-        this.options = options;
+    @Override
+    public void configure(final Map<String, String> config) {
+        options.configure(config);
     }
 
     @Override
-    public String render(final Project project) {
+    public byte[] render(final Project project) {
         lock.lock();
         try {
             // initialize fields
@@ -69,27 +72,26 @@ class SwaggerBackend implements Backend {
             projectVersion = project.getVersion();
             schemaBuilder = new SchemaBuilder(resources.getTypeRepresentations());
 
-            return renderInternal();
+            final JsonObject output = modifyJson(renderInternal());
+
+            return serialize(output);
         } finally {
             lock.unlock();
         }
     }
 
-    private String renderInternal() {
+    private JsonObject modifyJson(final JsonObject json) {
+        if (options.getJsonPatch() == null)
+            return json;
+        return options.getJsonPatch().apply(json);
+    }
+
+    private JsonObject renderInternal() {
         appendHeader();
         appendPaths();
         appendDefinitions();
 
-        try (final StringWriter writer = new StringWriter()) {
-            final Map<String, ?> config = singletonMap(JsonGenerator.PRETTY_PRINTING, true);
-            final JsonWriter jsonWriter = Json.createWriterFactory(config).createWriter(writer);
-            jsonWriter.write(builder.build());
-            jsonWriter.close();
-
-            return writer.toString();
-        } catch (IOException e) {
-            throw new RuntimeException("Could not write Swagger output", e);
-        }
+        return builder.build();
     }
 
     private void appendHeader() {
@@ -97,7 +99,7 @@ class SwaggerBackend implements Backend {
                 .add("version", projectVersion).add("title", projectName))
                 .add("host", options.getDomain()).add("basePath", '/' + resources.getBasePath())
                 .add("schemes", options.getSchemes().stream().map(Enum::name).map(String::toLowerCase).sorted()
-                        .collect(Json::createArrayBuilder, JsonArrayBuilder::add, JsonArrayBuilder::add));
+                        .collect(Json::createArrayBuilder, JsonArrayBuilder::add, JsonArrayBuilder::add).build());
         if (options.isRenderTags()) {
             final JsonArrayBuilder tags = Json.createArrayBuilder();
             resources.getResources().stream()
@@ -138,13 +140,18 @@ class SwaggerBackend implements Backend {
         final JsonArrayBuilder produces = Json.createArrayBuilder();
         method.getResponseMediaTypes().stream().sorted().forEach(produces::add);
 
-        final JsonObjectBuilder methodDescription = Json.createObjectBuilder().add("consumes", consumes).add("produces", produces)
+        final JsonObjectBuilder builder = Json.createObjectBuilder();
+
+        if (method.getDescription() != null)
+            builder.add("description", method.getDescription());
+
+        builder.add("consumes", consumes).add("produces", produces)
                 .add("parameters", buildParameters(method)).add("responses", buildResponses(method));
 
         if (options.isRenderTags())
-            Optional.ofNullable(extractTag(s)).ifPresent(t -> methodDescription.add("tags", Json.createArrayBuilder().add(t)));
+            Optional.ofNullable(extractTag(s)).ifPresent(t -> builder.add("tags", Json.createArrayBuilder().add(t)));
 
-        return methodDescription;
+        return builder;
     }
 
     private JsonArrayBuilder buildParameters(final ResourceMethod method) {
@@ -157,8 +164,14 @@ class SwaggerBackend implements Backend {
         buildParameters(parameters, ParameterType.FORM, parameterBuilder);
 
         if (method.getRequestBody() != null) {
-            parameterBuilder.add(Json.createObjectBuilder().add("name", "body").add("in", "body").add("required", true)
-                    .add("schema", schemaBuilder.build(method.getRequestBody())));
+            final JsonObjectBuilder requestBuilder = Json.createObjectBuilder()
+                    .add("name", "body")
+                    .add("in", "body")
+                    .add("required", true)
+                    .add("schema", schemaBuilder.build(method.getRequestBody()));
+            if (!StringUtils.isBlank(method.getRequestBodyDescription()))
+                requestBuilder.add("description", method.getRequestBodyDescription());
+            parameterBuilder.add(requestBuilder);
         }
         return parameterBuilder;
     }
@@ -168,11 +181,16 @@ class SwaggerBackend implements Backend {
                 .sorted(parameterComparator())
                 .forEach(e -> {
                     final String swaggerParameterType = getSwaggerParameterType(parameterType);
-                    if (swaggerParameterType != null)
-                        builder.add(schemaBuilder.build(e.getType())
+                    if (swaggerParameterType != null) {
+                        final JsonObjectBuilder paramBuilder = schemaBuilder.build(e.getType())
                                 .add("name", e.getName())
                                 .add("in", swaggerParameterType)
-                                .add("required", e.getDefaultValue() == null));
+                                .add("required", e.getDefaultValue() == null);
+                        if (!StringUtils.isBlank(e.getDescription())) {
+                            paramBuilder.add("description", e.getDescription());
+                        }
+                        builder.add(paramBuilder);
+                    }
                 });
     }
 
@@ -203,6 +221,7 @@ class SwaggerBackend implements Backend {
         builder.add("definitions", schemaBuilder.getDefinitions());
     }
 
+
     @Override
     public String getName() {
         return NAME;
@@ -221,6 +240,19 @@ class SwaggerBackend implements Backend {
             default:
                 // TODO handle others (possible w/ Swagger?)
                 return null;
+        }
+    }
+
+    private static byte[] serialize(final JsonObject jsonObject) {
+        try (final ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            final Map<String, ?> config = singletonMap(JsonGenerator.PRETTY_PRINTING, true);
+            final JsonWriter jsonWriter = Json.createWriterFactory(config).createWriter(output);
+            jsonWriter.write(jsonObject);
+            jsonWriter.close();
+
+            return output.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Could not write Swagger output", e);
         }
     }
 

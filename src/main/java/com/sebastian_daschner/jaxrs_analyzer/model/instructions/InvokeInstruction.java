@@ -18,17 +18,19 @@ package com.sebastian_daschner.jaxrs_analyzer.model.instructions;
 
 import com.sebastian_daschner.jaxrs_analyzer.model.Types;
 import com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier;
+import org.objectweb.asm.Label;
 
 /**
  * Represents an INVOKE_XYZ instruction.
  *
  * @author Sebastian Daschner
  */
-public class InvokeInstruction implements Instruction {
+public class InvokeInstruction extends Instruction {
 
     private final MethodIdentifier identifier;
 
-    public InvokeInstruction(final MethodIdentifier identifier) {
+    public InvokeInstruction(final MethodIdentifier identifier, final Label label) {
+        super(label);
         this.identifier = identifier;
     }
 
@@ -39,7 +41,7 @@ public class InvokeInstruction implements Instruction {
         if (identifier.isStaticMethod())
             difference++;
 
-        difference -= identifier.getParameters();
+        difference -= identifier.getParameters().size();
 
         return difference;
     }

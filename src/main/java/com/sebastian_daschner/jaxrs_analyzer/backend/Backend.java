@@ -16,10 +16,9 @@
 
 package com.sebastian_daschner.jaxrs_analyzer.backend;
 
-import com.sebastian_daschner.jaxrs_analyzer.backend.asciidoc.AsciiDocBackendBuilder;
-import com.sebastian_daschner.jaxrs_analyzer.backend.plaintext.PlainTextBackendBuilder;
-import com.sebastian_daschner.jaxrs_analyzer.backend.swagger.SwaggerBackendBuilder;
 import com.sebastian_daschner.jaxrs_analyzer.model.rest.Project;
+
+import java.util.Map;
 
 /**
  * Renders the analyzed JAX-RS resources into a String representation.
@@ -32,9 +31,9 @@ public interface Backend {
      * Renders the REST resources of the given project.
      *
      * @param project The project to render including all information and resources
-     * @return The String representation
+     * @return The data
      */
-    String render(Project project);
+    byte[] render(Project project);
 
     /**
      * Returns a human readable name of the actual backend.
@@ -42,35 +41,9 @@ public interface Backend {
     String getName();
 
     /**
-     * Creates a builder for Swagger backend.
+     * Configures the backend.
      */
-    static SwaggerBackendBuilder swagger() {
-        return new SwaggerBackendBuilder();
-    }
-
-    /**
-     * Creates a builder for plain text backend.
-     */
-    static PlainTextBackendBuilder plainText() {
-        return new PlainTextBackendBuilder();
-    }
-
-    /**
-     * Creates a builder for AsciiDoc backend.
-     */
-    static AsciiDocBackendBuilder asciiDoc() {
-        return new AsciiDocBackendBuilder();
-    }
-
-    /**
-     * Backend builder pattern.
-     */
-    interface BackendBuilder {
-
-        /**
-         * Constructs the actual backend.
-         */
-        Backend build();
+    default void configure(Map<String, String> config) {
     }
 
 }

@@ -25,15 +25,29 @@ public class ResourceMethodBuilder {
     private final ResourceMethod method;
 
     private ResourceMethodBuilder(final HttpMethod method) {
-        this.method = new ResourceMethod(method);
+        this.method = new ResourceMethod(method, null);
+    }
+
+    public ResourceMethodBuilder(final HttpMethod method, final String description) {
+        this.method = new ResourceMethod(method, description);
     }
 
     public static ResourceMethodBuilder withMethod(final HttpMethod method) {
         return new ResourceMethodBuilder(method);
     }
 
+    public static ResourceMethodBuilder withMethod(final HttpMethod method, final String description) {
+        return new ResourceMethodBuilder(method, description);
+    }
+
     public ResourceMethodBuilder andRequestBodyType(final String type) {
         method.setRequestBody(TypeIdentifier.ofType(type));
+        return this;
+    }
+
+    public ResourceMethodBuilder andRequestBodyType(final String type, final String requestBodyDescription) {
+        method.setRequestBody(TypeIdentifier.ofType(type));
+        method.setRequestBodyDescription(requestBodyDescription);
         return this;
     }
 
@@ -58,69 +72,80 @@ public class ResourceMethodBuilder {
     }
 
     public ResourceMethodBuilder andMatrixParam(final String name, final String type) {
-        andParam(ParameterType.MATRIX, name, type, null);
+        andParam(ParameterType.MATRIX, name, type, null, null);
         return this;
     }
 
     public ResourceMethodBuilder andMatrixParam(final String name, final String type, final String defaultValue) {
-        andParam(ParameterType.MATRIX, name, type, defaultValue);
+        andParam(ParameterType.MATRIX, name, type, defaultValue, null);
         return this;
     }
 
     public ResourceMethodBuilder andQueryParam(final String name, final String type) {
-        andParam(ParameterType.QUERY, name, type, null);
+        andParam(ParameterType.QUERY, name, type, null, null);
         return this;
     }
 
     public ResourceMethodBuilder andQueryParam(final String name, final String type, final String defaultValue) {
-        andParam(ParameterType.QUERY, name, type, defaultValue);
+        andParam(ParameterType.QUERY, name, type, defaultValue, null);
+        return this;
+    }
+
+    public ResourceMethodBuilder andQueryParam(final String name, final String type, final String defaultValue, final String description) {
+        andParam(ParameterType.QUERY, name, type, defaultValue, description);
         return this;
     }
 
     public ResourceMethodBuilder andPathParam(final String name, final String type) {
-        andParam(ParameterType.PATH, name, type, null);
+        andParam(ParameterType.PATH, name, type, null, null);
         return this;
     }
 
     public ResourceMethodBuilder andPathParam(final String name, final String type, final String defaultValue) {
-        andParam(ParameterType.PATH, name, type, defaultValue);
+        andParam(ParameterType.PATH, name, type, defaultValue, null);
+        return this;
+    }
+
+    public ResourceMethodBuilder andPathParam(final String name, final String type, final String defaultValue, final String description) {
+        andParam(ParameterType.PATH, name, type, defaultValue, description);
         return this;
     }
 
     public ResourceMethodBuilder andCookieParam(final String name, final String type) {
-        andParam(ParameterType.COOKIE, name, type, null);
+        andParam(ParameterType.COOKIE, name, type, null, null);
         return this;
     }
 
     public ResourceMethodBuilder andCookieParam(final String name, final String type, final String defaultValue) {
-        andParam(ParameterType.COOKIE, name, type, defaultValue);
+        andParam(ParameterType.COOKIE, name, type, defaultValue, null);
         return this;
     }
 
     public ResourceMethodBuilder andHeaderParam(final String name, final String type) {
-        andParam(ParameterType.HEADER, name, type, null);
+        andParam(ParameterType.HEADER, name, type, null, null);
         return this;
     }
 
     public ResourceMethodBuilder andHeaderParam(final String name, final String type, final String defaultValue) {
-        andParam(ParameterType.HEADER, name, type, defaultValue);
+        andParam(ParameterType.HEADER, name, type, defaultValue, null);
         return this;
     }
 
     public ResourceMethodBuilder andFormParam(final String name, final String type) {
-        andParam(ParameterType.FORM, name, type, null);
+        andParam(ParameterType.FORM, name, type, null, null);
         return this;
     }
 
     public ResourceMethodBuilder andFormParam(final String name, final String type, final String defaultValue) {
-        andParam(ParameterType.FORM, name, type, defaultValue);
+        andParam(ParameterType.FORM, name, type, defaultValue, null);
         return this;
     }
 
-    public ResourceMethodBuilder andParam(final ParameterType parameterType, final String name, final String type, final String defaultValue) {
+    public ResourceMethodBuilder andParam(final ParameterType parameterType, final String name, final String type, final String defaultValue, final String description) {
         final MethodParameter methodParameter = new MethodParameter(TypeIdentifier.ofType(type), parameterType);
         methodParameter.setName(name);
         methodParameter.setDefaultValue(defaultValue);
+        methodParameter.setDescription(description);
         method.getMethodParameters().add(methodParameter);
         return this;
     }
