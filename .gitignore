@@ -10,8 +10,6 @@ dependency-reduced-pom.xml
 .idea/
 
 *.class
-/.classpath
 /.settings/
+/.classpath
 /.project
-/deploy.sh
-!lib/**/*.class

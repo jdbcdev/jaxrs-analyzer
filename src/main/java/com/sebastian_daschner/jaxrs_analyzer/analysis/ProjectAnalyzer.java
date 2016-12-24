@@ -222,8 +222,16 @@ public class ProjectAnalyzer {
         return replacedSeparators.substring(0, replacedSeparators.length() - ".class".length());
     }
 
-<<<<<<< HEAD
-    
+    /**
+     * Converts the given path name of a directory to the fully-qualified package name.
+     *
+     * @param pathName The directory name (e.g. a/package/)
+     * @return The fully-qualified package name (e.g. a.package)
+     */
+    private static String toQualifiedPackageName(final String pathName) {
+        return pathName.replace(File.separatorChar, '.');
+    }
+
     static public class ThreadLocalClassLoader {
         // Atomic integer containing the next thread ID to be assigned
         private static final URLClassLoader urlClassLoader = new URLClassLoader(((URLClassLoader)ClassLoader.getSystemClassLoader()).getURLs());
@@ -247,16 +255,5 @@ public class ProjectAnalyzer {
             return new ClassReader(resourceAsStream);
         }
     }    
-=======
-    /**
-     * Converts the given path name of a directory to the fully-qualified package name.
-     *
-     * @param pathName The directory name (e.g. a/package/)
-     * @return The fully-qualified package name (e.g. a.package)
-     */
-    private static String toQualifiedPackageName(final String pathName) {
-        return pathName.replace(File.separatorChar, '.');
-    }
 
->>>>>>> refs/remotes/upstream/master
 }

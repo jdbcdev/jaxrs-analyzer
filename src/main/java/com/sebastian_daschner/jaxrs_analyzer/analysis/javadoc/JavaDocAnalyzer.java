@@ -1,5 +1,6 @@
 package com.sebastian_daschner.jaxrs_analyzer.analysis.javadoc;
 
+import com.sebastian_daschner.jaxrs_analyzer.LogProvider;
 import com.sebastian_daschner.jaxrs_analyzer.model.methods.MethodIdentifier;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.ClassResult;
 import com.sebastian_daschner.jaxrs_analyzer.model.results.MethodResult;
@@ -7,6 +8,7 @@ import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.MethodDoc;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -24,12 +26,20 @@ public class JavaDocAnalyzer {
     private static final Map<String, ClassDoc> CLASS_DOCS = new ConcurrentHashMap<>();
 
     public void analyze(final Set<ClassResult> classResults, final Set<String> packages, final Set<Path> projectSourcePaths, final Set<Path> classPaths) {
-        invokeDoclet(packages, projectSourcePaths, classPaths);
-
-        combineResults(classResults);
+        try {
+            invokeDoclet(packages, projectSourcePaths, classPaths);
+            combineResults(classResults);
+        } catch (Exception e) {
+            LogProvider.error("could not analyze JavaDoc, reason: " + e.getMessage());
+            LogProvider.debug(e);
+        }
     }
 
-    private void invokeDoclet(final Set<String> packages, final Set<Path> projectSourcePaths, final Set<Path> classPaths) {
+    private void invokeDoclet(final Set<String> packages, final Set<Path> projectSourcePaths, final Set<Path> classPaths) throws Exception {
+        final String docletName = "com.sebastian_daschner.jaxrs_analyzer.analysis.javadoc.JAXRSDoclet";
+        final Class<?> doclet = ClassLoader.getSystemClassLoader().loadClass(docletName);
+        final String docletPath = Paths.get(doclet.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+
         // TODO only invoke on sources visited in visitSource
         final String[] args = Stream.concat(
                 Stream.of("-sourcepath",
@@ -37,12 +47,15 @@ public class JavaDocAnalyzer {
                         "-classpath",
                         joinPaths(classPaths),
                         "-quiet",
+                        "-docletpath",
+                        docletPath,
                         "-doclet",
-                        "com.sebastian_daschner.jaxrs_analyzer.analysis.javadoc.JAXRSDoclet"),
+                        docletName),
                 packages.stream())
                 .toArray(String[]::new);
 
-        com.sun.tools.javadoc.Main.execute(args);
+        final Class<?> javaDocMain = ClassLoader.getSystemClassLoader().loadClass("com.sun.tools.javadoc.Main");
+        javaDocMain.getMethod("execute", String[].class).invoke(null, (Object) args);
     }
 
     private String joinPaths(final Set<Path> projectSourcePaths) {
