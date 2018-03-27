@@ -140,10 +140,10 @@ public class RelevantInstructionReducer {
      * @param unhandledLoadIndexes The LOAD/STORE indexes to find
      * @return The backtrack positions of the LOAD / STORE indexes
      */
-    private SortedSet<Integer> findLoadStoreBacktrackPositions(final Set<Integer> unhandledLoadIndexes) {
+    private SortedSet findLoadStoreBacktrackPositions(final Set<Integer> unhandledLoadIndexes) {
         return unhandledLoadIndexes.stream()
                 .map(index -> stackSizeSimulator.findLoadStoreBacktrackPositions(InstructionFinder.findLoadStores(index, instructions)))
-                .collect(() -> new TreeSet<>(Comparator.reverseOrder()), Set::addAll, Set::addAll);
+                .collect(() -> new TreeSet<Integer>(Comparator.reverseOrder()), Set::addAll, Set::addAll);
     }
 
 }
