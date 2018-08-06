@@ -84,10 +84,14 @@ public class JavaDocParserVisitor extends VoidVisitorAdapter<Void> {
 
     @Override
     public void visit(FieldDeclaration field, Void arg) {
+        try {
         field.getComment()
                 .filter(Comment::isJavadocComment)
                 .map(this::toJavaDoc)
                 .ifPresent(c -> classComments.get(className).getFieldComments().add(createFieldComment(c, field)));
+        } catch (NullPointerException npe) {
+            System.err.println("Christophe Thiebaud blatantly ignored a " + npe.getClass().getSimpleName() + " around line 86 of " + this.getClass().getSimpleName());
+        }
         super.visit(field, arg);
     }
 
