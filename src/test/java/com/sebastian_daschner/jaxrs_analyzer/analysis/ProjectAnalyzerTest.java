@@ -210,6 +210,11 @@ public class ProjectAnalyzerTest {
         ResourceMethod fourthGet = ResourceMethodBuilder.withMethod(HttpMethod.GET, "Returns a test string with plain text.").andAcceptMediaTypes("application/json")
                 .andResponseMediaTypes("text/plain", "application/json").andResponse(200, ResponseBuilder.withResponseBody(stringIdentifier).build()).build();
         addMethods(resources, "test/test", fourthGet);
+        
+        // resourceWithoutClassLevelJavadoc/test
+        ResourceMethod getResourceWithoutJavadoc = ResourceMethodBuilder.withMethod(HttpMethod.GET, "Returns a test string in json.").andAcceptMediaTypes("application/json")
+                .andResponseMediaTypes("application/json").andResponse(200, ResponseBuilder.withResponseBody(stringIdentifier).build()).build();
+        addMethods(resources, "resourceWithoutJavadoc/test", getResourceWithoutJavadoc);
 
         // complex
         ResourceMethod eighthGet = ResourceMethodBuilder.withMethod(HttpMethod.GET).andResponseMediaTypes("application/json")
@@ -274,6 +279,12 @@ public class ProjectAnalyzerTest {
                 .andQueryParam("query", Types.STRING, null, "The query param.")
                 .andResponse(200, ResponseBuilder.withResponseBody(stringIdentifier).build()).build();
         addMethods(resources, "complex/anotherSubres/{name}", eleventhGet);
+
+        // complex/auth
+        ResourceMethod authGet = ResourceMethodBuilder.withMethod(HttpMethod.GET, "Creates an authorization endpoint.")
+                .andHeaderParam("Authorization", Types.STRING)
+                .andResponse(200, ResponseBuilder.withResponseBody(stringIdentifier).build()).build();
+        addMethods(resources, "complex/auth", authGet);
 
         // json_tests
         final TypeIdentifier firstIdentifier = TypeIdentifier.ofDynamic();

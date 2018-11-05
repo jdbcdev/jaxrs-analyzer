@@ -9,6 +9,8 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.javadoc.Javadoc;
 import com.github.javaparser.javadoc.JavadocBlockTag;
@@ -88,15 +90,20 @@ public class JavaDocParserVisitor extends VoidVisitorAdapter<Void> {
         field.getComment()
                 .filter(Comment::isJavadocComment)
                 .map(this::toJavaDoc)
-                .ifPresent(c -> classComments.get(className).getFieldComments().add(createFieldComment(c, field)));
+                .ifPresent(c -> createFieldComment(c, field));
         } catch (NullPointerException npe) {
-            System.err.println("Christophe Thiebaud blatantly ignored a " + npe.getClass().getSimpleName() + " around line 86 of " + this.getClass().getSimpleName());
+            System.err.println("Christophe Thiebaud blatantly ignored a " + npe.getClass().getSimpleName() + " around line 90 of " + this.getClass().getSimpleName());
         }
         super.visit(field, arg);
     }
 
-    private MemberParameterTag createFieldComment(Javadoc javadoc, FieldDeclaration field) {
-        return createMemberParamTag(javadoc.getDescription(), field.getAnnotations().stream());
+    private void createFieldComment(Javadoc javadoc, FieldDeclaration field) {
+        ClassComment classComment = classComments.get(className);
+        if (classComment == null) {
+            classComment = new ClassComment();
+            classComments.put(className, classComment);
+        }
+        classComment.getFieldComments().add(createMemberParamTag(javadoc.getDescription(), field.getAnnotations().stream()));
     }
 
     @Override
@@ -136,8 +143,19 @@ public class JavaDocParserVisitor extends VoidVisitorAdapter<Void> {
         Map<String, String> annotations = annotationStream
                 .filter(Expression::isSingleMemberAnnotationExpr)
                 .collect(Collectors.toMap(a -> a.getName().getIdentifier(),
-                a -> a.asSingleMemberAnnotationExpr().getMemberValue().asStringLiteralExpr().asString()));
+                        this::createMemberParamValue));
         return new MemberParameterTag(javadocDescription.toText(), annotations);
+    }
+
+    private String createMemberParamValue(AnnotationExpr a) {
+        Expression memberValue = a.asSingleMemberAnnotationExpr().getMemberValue();
+        if (memberValue.getClass().isAssignableFrom(StringLiteralExpr.class))
+            return memberValue.asStringLiteralExpr().asString();
+
+        if (memberValue.getClass().isAssignableFrom(NameExpr.class))
+            return memberValue.asNameExpr().getNameAsString();
+
+        throw new IllegalArgumentException(String.format("Javadoc param type (%s) not supported.", memberValue.toString()));
     }
 
     private Map<Integer, String> createResponseComments(Javadoc javadoc) {
